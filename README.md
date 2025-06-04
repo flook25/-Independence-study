@@ -103,7 +103,7 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://www.siit.tu.ac.th/images/webpage/JirachaiBuddhakulsomsiri.jpg" height="160"/><br/>
+  <img src="https://lh3.googleusercontent.com/paExoZMgEMKybZnusz1u0Ox3p3LPGXeX_wWCkYxvQvKiFn-EuTaq3v_xeiEK8e4cJkAWCjCQpU_DieQ8GHYKm5DZnuWP-twWKus7oB0wmNceyr1TlDB5uVTO-yjSQzAxtQ=w1280" height="160"/><br/>
   <b>Dr. Jirachai Buddhakulsomsiri</b><br/>
   Associate Professor<br/>
   Sirindhorn International Institute of Technology (SIIT)
