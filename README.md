@@ -32,9 +32,9 @@
 ## ❗ Problem Statement
 
 Small-to-mid-sized toy retailers often suffer from:
-- High demand uncertainty and short product life cycles
-- Seasonal demand patterns
-- Limited access to advanced inventory systems
+- High demand uncertainty and short product life cycles  
+- Seasonal demand patterns  
+- Limited access to advanced inventory systems  
 
 This results in stockouts or excessive inventory. Our study creates a simulation-based tool to help such businesses make better inventory decisions without complex software.
 
@@ -45,10 +45,10 @@ This results in stockouts or excessive inventory. Our study creates a simulation
 We simulate a **base-stock inventory policy** under a **lost sales environment** (fixed 2-day lead time).
 
 **Key Steps:**
-1. Aggregate historical toy demand from Kaggle dataset
-2. Estimate empirical demand distribution during lead time (DDLT)
-3. Calculate expected shortage \( E(S) \)
-4. Simulate total costs across base-stock levels
+1. Aggregate historical toy demand from Kaggle dataset  
+2. Estimate empirical demand distribution during lead time (DDLT)  
+3. Calculate expected shortage \( E(S) \)  
+4. Simulate total costs across base-stock levels  
 5. Optimize using an iteration-based search (manual EOQ + CSL + E(S))
 
 ---
@@ -67,16 +67,16 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 
 ## 📊 Tools & Technologies
 
-- **Excel** for simulation
-- **Kaggle Retail Forecasting Dataset** for historical demand
+- **Excel** for simulation  
+- **Kaggle Retail Forecasting Dataset** for historical demand  
 - Manual modeling (no programming required)
 
 ---
 
 ## 📈 Key Results
 
-- Optimal base-stock level minimizes cost and balances service level
-- Method provides **dynamic, spreadsheet-based inventory decision support**
+- Optimal base-stock level minimizes cost and balances service level  
+- Method provides **dynamic, spreadsheet-based inventory decision support**  
 - Suitable for retailers without ERP or advanced systems
 
 ---
@@ -85,14 +85,15 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 
 - 📊 Excel Simulation Workbook  
 - 📽 PowerPoint Presentation ([View Slides](#))  
-- 📘 Final Report (to be added if you have one)  
+- 📘 Final Report (optional)
 
 ---
 
 ## 👨‍🏫 Advisor
 
 <div align="center">
-<b>Dr. Jirachai Buddhakulsomsiri</b>  
-Associate Professor  
-Sirindhorn International Institute of Technology (SIIT)  
+  <img src="images/webpage/JirachaiBuddhakulsomsiri.jpg" height="160"/><br/>
+  <b>Dr. Jirachai Buddhakulsomsiri</b><br/>
+  Associate Professor<br/>
+  Sirindhorn International Institute of Technology (SIIT)
 </div>
