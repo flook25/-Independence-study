@@ -67,7 +67,7 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 
 ## 📊 Tools & Technologies
 
-- **Excel** for simulation  
+- **Excel / Google Sheets** for simulation  
 - **Kaggle Retail Forecasting Dataset** for historical demand  
 - Manual modeling (no programming required)
 
@@ -83,16 +83,27 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 
 ## 📁 Deliverables
 
-- 📊 Excel Simulation Workbook  
-- 📽 PowerPoint Presentation ([View Slides](#))  
-- 📘 Final Report (optional)
+- 📘 [**Final Report (Google Docs)**](https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing)  
+  <a href="https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing">
+    <img src="https://img.icons8.com/color/96/google-docs--v1.png" width="48"/>
+  </a>
+
+- 📊 [**Simulation Workbook (Google Sheets)**](https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing)  
+  <a href="https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing">
+    <img src="https://img.icons8.com/color/96/google-sheets.png" width="48"/>
+  </a>
+
+- 📽 [**Presentation Slides (Google Slides)**](https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing)  
+  <a href="https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing">
+    <img src="https://img.icons8.com/color/96/google-slides.png" width="48"/>
+  </a>
 
 ---
 
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://lh3.googleusercontent.com/paExoZMgEMKybZnusz1u0Ox3p3LPGXeX_wWCkYxvQvKiFn-EuTaq3v_xeiEK8e4cJkAWCjCQpU_DieQ8GHYKm5DZnuWP-twWKus7oB0wmNceyr1TlDB5uVTO-yjSQzAxtQ=w1280" height="160"/><br/>
+  <img src="https://www.siit.tu.ac.th/images/webpage/JirachaiBuddhakulsomsiri.jpg" height="160"/><br/>
   <b>Dr. Jirachai Buddhakulsomsiri</b><br/>
   Associate Professor<br/>
   Sirindhorn International Institute of Technology (SIIT)
