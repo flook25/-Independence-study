@@ -114,7 +114,7 @@ You can explore the simulation logic and interact with the model directly via Go
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://lh3.googleusercontent.com/paExoZMgEMKybZnusz1u0Ox3p3LPGXeX_wWCkYxvQvKiFn-EuTaq3v_xeiEK8e4cJkAWCjCQpU_DieQ8GHYKm5DZnuWP-twWKus7oB0wmNceyr1TlDB5uVTO-yjSQzAxtQ=w1280" height="160"/><br/>
+  <img src="https://lh6.googleusercontent.com/NY4NXAzaLNx5RYZ5jBUMP-9SZJhtL56ao3JNO0SkNyxF477LRQ31pCzMEkZqyBRxAGb2xzScTE-n-hNEt634JRCADHoO9Rffndw8_2AJVfkjByX2ZomQIPp1so-xegwxgP2PGTPiHQrWwwXGZ5axZc_dLsJ8LKCC1n5T0E-vvRHjIA1BdoC72w=w1280" height="160"/><br/>
   <b>Dr. Jirachai Buddhakulsomsiri</b><br/>
   Associate Professor<br/>
   Sirindhorn International Institute of Technology (SIIT)
