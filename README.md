@@ -1,40 +1,40 @@
 # 🎓 Master's Independent Study — LSCSE
 
-[![Excel Simulation](https://img.shields.io/badge/Tool-Excel-green?logo=microsoft-excel)](#)
+**Tool:** Spreadsheet-based Simulation (Excel / Google Sheets)
 
 ---
 
 <div align="center">
-  <img src="https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png" height="100"/>
-  <br/><br/>
-  <h3>Master’s Independent Study — LSCSE</h3>
-  <b>Sirindhorn International Institute of Technology (SIIT), Thammasat University</b>  
-  <br/>
-  <b>Advisor:</b> Dr. Jirachai Buddhakulsomsiri  
+  <a href="https://www.siit.tu.ac.th/">
+    <img src="https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png" alt="SIIT Logo" width="150"/>
+  </a>
+  <h3>Master’s Independent Study — LSCSE</h3>
+  <p><b>Sirindhorn International Institute of Technology (SIIT), Thammasat University</b></p>
+  <p><b>Advisor:</b> Dr. Jirachai Buddhakulsomsiri</p>
 </div>
 
 ---
 
 ## 📋 Project Title
 
-**Simulation-Based Inventory Optimization for Toy Retailers Using Base-Stock Policy**
+> Simulation-Based Inventory Optimization for Toy Retailers Using Base-Stock Policy
 
 ---
 
 ## 🎯 Objectives
 
-- Minimize total inventory costs (holding, shortage, ordering)
-- Maintain high service levels via optimal base-stock levels
-- Provide a low-cost, spreadsheet-based decision-support tool for toy retailers
+- Minimize total inventory costs (holding, shortage, ordering).
+- Maintain high service levels via optimal base-stock levels.
+- Provide a low-cost, spreadsheet-based decision-support tool for toy retailers.
 
 ---
 
 ## ❗ Problem Statement
 
 Small-to-mid-sized toy retailers often suffer from:
-- High demand uncertainty and short product life cycles  
-- Seasonal demand patterns  
-- Limited access to advanced inventory systems  
+- High demand uncertainty and short product life cycles.
+- Seasonal demand patterns.
+- Limited access to advanced inventory systems.
 
 This results in stockouts or excessive inventory. Our study creates a simulation-based tool to help such businesses make better inventory decisions without complex software.
 
@@ -45,77 +45,67 @@ This results in stockouts or excessive inventory. Our study creates a simulation
 We simulate a **base-stock inventory policy** under a **lost sales environment** (fixed 2-day lead time).
 
 **Key Steps:**
-1. Aggregate historical toy demand from Kaggle dataset  
-2. Estimate empirical demand distribution during lead time (DDLT)  
-3. Calculate expected shortage \( E(S) \)  
-4. Simulate total costs across base-stock levels  
-5. Optimize using an iteration-based search (manual EOQ + CSL + E(S))
+1. Aggregate historical toy demand from a Kaggle dataset.
+2. Estimate the empirical demand distribution during lead time (DDLT).
+3. Calculate the expected shortage $E(S)$.
+4. Simulate total costs across various base-stock levels.
+5. Optimize using an iteration-based search to find the best policy.
 
 ---
 
 ## 🧮 Cost Model
 
-\[
-\text{Total Cost} = \text{Ordering Cost} + \text{Holding Cost} + \text{Shortage Cost}
-\]
+The total inventory cost is modeled as the sum of three components:
 
-- **Ordering Cost:** Fixed per cycle  
-- **Holding Cost:** \( CH \cdot \frac{S}{2} \)  
-- **Shortage Cost:** \( CS \cdot E(S) \)
+$$
+\text{Total Cost} = \text{Ordering Cost} + \text{Holding Cost} + \text{Shortage Cost}
+$$
+
+- **Ordering Cost:** A fixed cost incurred per ordering cycle.
+- **Holding Cost:** The cost of carrying inventory, calculated as $CH \cdot \frac{S}{2}$.
+- **Shortage Cost:** The cost of lost sales, calculated as $CS \cdot E(S)$.
 
 ---
 
 ## 📊 Tools & Technologies
 
-- **Excel / Google Sheets** for simulation  
-- **Kaggle Retail Forecasting Dataset** for historical demand  
-- Manual modeling (no programming required)
+- **Excel / Google Sheets** for simulation and modeling.
+- **Kaggle Retail Forecasting Dataset** for historical demand data.
+- Manual modeling and iterative calculations (no programming required for the core tool).
 
 ---
 
 ## 📈 Key Results
 
-- Optimal base-stock level minimizes cost and balances service level  
-- Method provides **dynamic, spreadsheet-based inventory decision support**  
-- Suitable for retailers without ERP or advanced systems
+- Identified an optimal base-stock level that minimizes total costs while balancing the service level.
+- Developed a **dynamic, spreadsheet-based inventory decision-support tool**.
+- The method is highly suitable for retailers without access to expensive ERP or advanced inventory management systems.
 
 ---
 
 ## 💻 Code & Simulation
 
-You can explore the simulation logic and interact with the model directly via Google Colab:
+You can explore the simulation logic and interact with the model directly via the Google Colab notebook, which replicates the spreadsheet logic in Python for demonstration.
 
-- 📊 [**Google Colab Simulation**](https://colab.research.google.com/drive/1ZKxxbaGxrzy3-DLhAEYlIKTKCAnKtrf1?usp=sharing)  
-  <a href="https://colab.research.google.com/drive/1ZKxxbaGxrzy3-DLhAEYlIKTKCAnKtrf1?usp=sharing">
-    <img src="https://img.icons8.com/color/96/google-colab.png" width="48"/>
-  </a>
+<a href="https://colab.research.google.com/drive/1ZKxxbaGxrzy3-DLhAEYlIKTKCAnKtrf1?usp=sharing">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a>
 
 ---
 
 ## 📁 Deliverables
 
-- 📘 [**Final Report (Google Docs)**](https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing)  
-  <a href="https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing">
-    <img src="https://img.icons8.com/color/96/google-docs--v1.png" width="48"/>
-  </a>
-
-- 📊 [**Simulation Workbook (Google Sheets)**](https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing)  
-  <a href="https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing">
-    <img src="https://img.icons8.com/color/96/google-sheets.png" width="48"/>
-  </a>
-
-- 📽 [**Presentation Slides (Google Slides)**](https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing)  
-  <a href="https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing">
-    <img src="https://img.icons8.com/color/96/google-slides.png" width="48"/>
-  </a>
+| Final Report | Simulation Workbook | Presentation Slides |
+| :----------: | :-------------------: | :-------------------: |
+| **[View on Google Docs](https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing)**<br><br><a href="https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-docs--v1.png" width="64" alt="Google Docs Icon"/></a> | **[View on Google Sheets](https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing)**<br><br><a href="https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-sheets.png" width="64" alt="Google Sheets Icon"/></a> | **[View on Google Slides](https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing)**<br><br><a href="https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-slides.png" width="64" alt="Google Slides Icon"/></a> |
 
 ---
 
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://lh6.googleusercontent.com/NY4NXAzaLNx5RYZ5jBUMP-9SZJhtL56ao3JNO0SkNyxF477LRQ31pCzMEkZqyBRxAGb2xzScTE-n-hNEt634JRCADHoO9Rffndw8_2AJVfkjByX2ZomQIPp1so-xegwxgP2PGTPiHQrWwwXGZ5axZc_dLsJ8LKCC1n5T0E-vvRHjIA1BdoC72w=w1280" height="160"/><br/>
-  <b>Dr. Jirachai Buddhakulsomsiri</b><br/>
-  Associate Professor<br/>
-  Sirindhorn International Institute of Technology (SIIT)
+  <img src="https://lh6.googleusercontent.com/uRbvaXs8JX4BmFXOXmr_11oAZO2PPEWxi7Epn-ZaMYWlxhtZxIZoqXwEvmw-7aPhZ9c7LmQyz7lrwI_vaqKlWH2yc_lT_Hn_sB4vr370UNLGHr8Eor5OGgBWUhpCDrdJZvM3CZUlPNgeosiG8V1Be4ee5rF9776gfjj7l8-xjl1e1lFWHRd-lQ=w1280" alt="Dr. Jirachai Buddhakulsomsiri" width="160" style="border-radius: 50%;"/>
+  <br>
+  <b>Dr. Jirachai Buddhakulsomsiri</b>
+  <p>Associate Professor<br>Sirindhorn International Institute of Technology (SIIT)</p>
 </div>
