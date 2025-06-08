@@ -1,6 +1,6 @@
 # 🎓 Master's Independent Study — LSCSE
 
-**Tool:** Spreadsheet-based Simulation (Excel / Google Sheets)
+[![Excel Simulation](https://img.shields.io/badge/Tool-Excel-green?logo=microsoft-excel)](#)
 
 ---
 
