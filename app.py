@@ -3,8 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from scipy.stats import norm, poisson, uniform, chi2
-import io # Used to capture print statements
+import io
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -15,9 +14,6 @@ st.set_page_config(
 )
 
 # --- All Functions from the Original Script ---
-# We will place all your functions here. I've made minor adjustments
-# to use Streamlit components (e.g., st.write instead of print, st.dataframe instead of display)
-
 # Chapter 1
 def load_and_inspect_data(file_path):
     try:
@@ -105,35 +101,46 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     st.pyplot(fig)
 
 # Chapter 5
+@st.cache_data
 def calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_days=2):
     if demand_prob_table is None or demand_prob_table.empty:
         return None
     
-    lead_time_demand_df = demand_prob_table[['Total_Demand', 'Probability']].copy()
-    if lead_time_days == 1:
-        lead_time_demand_df.rename(columns={'Total_Demand': 'Demand_During_LeadTime'}, inplace=True)
-    else:
-        current_df = demand_prob_table[['Total_Demand', 'Probability']].copy()
-        for day in range(2, lead_time_days + 1):
-            next_day_df = demand_prob_table[['Total_Demand', 'Probability']].copy()
-            current_df['_key'] = 1
-            next_day_df['_key'] = 1
-            combined = pd.merge(current_df, next_day_df, on='_key', suffixes=('_1', '_2'))
-            combined['Total_Demand'] = combined['Total_Demand_1'] + combined['Total_Demand_2']
-            combined['Probability'] = combined['Probability_1'] * combined['Probability_2']
-            current_df = combined[['Total_Demand', 'Probability']]
-        lead_time_demand_df = current_df.groupby('Total_Demand')['Probability'].sum().reset_index()
-        lead_time_demand_df.rename(columns={'Total_Demand': 'Demand_During_LeadTime'}, inplace=True)
+    # This calculation is a convolution. We can use numpy for efficiency.
+    # Get the demand values and their probabilities
+    demands = demand_prob_table['Total_Demand'].values
+    probs = demand_prob_table['Probability'].values
     
-    final_lead_time_dist = lead_time_demand_df.sort_values(by='Demand_During_LeadTime').reset_index(drop=True)
+    # Create a full probability distribution array (can be large)
+    max_daily_demand = int(demands.max())
+    full_probs = np.zeros(max_daily_demand + 1)
+    full_probs[demands.astype(int)] = probs
+
+    # Convolve the distribution with itself (lead_time_days - 1) times
+    convolved_probs = full_probs
+    for _ in range(lead_time_days - 1):
+        convolved_probs = np.convolve(convolved_probs, full_probs)
+
+    # Create the final DataFrame
+    final_demands = np.arange(len(convolved_probs))
+    final_lead_time_dist = pd.DataFrame({
+        'Demand_During_LeadTime': final_demands,
+        'Probability': convolved_probs
+    })
+    
+    # Filter out zero probabilities to keep table size manageable
+    final_lead_time_dist = final_lead_time_dist[final_lead_time_dist['Probability'] > 1e-9].copy()
+    
+    final_lead_time_dist = final_lead_time_dist.sort_values(by='Demand_During_LeadTime').reset_index(drop=True)
     final_lead_time_dist['CSL'] = final_lead_time_dist['Probability'].cumsum()
     return final_lead_time_dist
 
 # Chapter 6
-def calculate_expected_shortage(ddlt_prob_table):
-    if ddlt_prob_table is None or ddlt_prob_table.empty:
+@st.cache_data
+def calculate_expected_shortage(_ddlt_prob_table): # Use leading _ to avoid cache issues with mutable objects
+    if _ddlt_prob_table is None or _ddlt_prob_table.empty:
         return None
-    df = ddlt_prob_table.copy()
+    df = _ddlt_prob_table.copy()
     df = df.sort_values('Demand_During_LeadTime').reset_index(drop=True)
     df['R'] = df['Demand_During_LeadTime']
     df['x_fx'] = df['Demand_During_LeadTime'] * df['Probability']
@@ -146,38 +153,39 @@ def calculate_expected_shortage(ddlt_prob_table):
     
     return df[['R', 'Probability', 'CSL', 'E_S']]
 
-
 # Chapter 8 Functions
 def get_es_from_r(R_val, ddlt_table_sorted):
+    # Since ddlt_table_sorted['R'] are discrete, find the closest available R
     if R_val in ddlt_table_sorted['R'].values:
         return ddlt_table_sorted.loc[ddlt_table_sorted['R'] == R_val, 'E_S'].iloc[0]
     else:
-        idx_gte = ddlt_table_sorted[ddlt_table_sorted['R'] >= R_val].index
-        if not idx_gte.empty:
-            chosen_R_idx = idx_gte[0]
-        else:
-            chosen_R_idx = ddlt_table_sorted.index[-1]
-        return ddlt_table_sorted.loc[chosen_R_idx, 'E_S']
+        # Find index of R just greater than or equal to R_val using searchsorted
+        idx = ddlt_table_sorted['R'].searchsorted(R_val, side='left')
+        if idx == len(ddlt_table_sorted): # If R_val is greater than all R's
+            idx = len(ddlt_table_sorted) - 1
+        return ddlt_table_sorted.loc[idx, 'E_S']
 
-def calculate_basestock_cost(S_candidate, ddlt_table_sorted, mu_DL, Ch, Cs):
+def calculate_basestock_cost(S_candidate, ddlt_table_sorted, mu_DL, Ch_annual, Cs, D_annual):
     S_candidate = max(0, S_candidate)
     es_at_S = get_es_from_r(S_candidate, ddlt_table_sorted)
-    holding_cost = Ch * (S_candidate - mu_DL + es_at_S) * 365 # Annualized
-    shortage_cost = Cs * es_at_S * (D_annual / (S_candidate - mu_DL)) if (S_candidate - mu_DL) > 0 else 0 # Annualized shortage
-    total_cost = holding_cost + shortage_cost
-    return total_cost
+    
+    # Annual Holding Cost
+    avg_inventory = S_candidate - mu_DL + es_at_S
+    holding_cost = Ch_annual * avg_inventory
+    
+    # Annual Shortage Cost
+    # Shortages occur with a certain frequency (D/Q). In Basestock, Q is effectively 1, but this model is simplified.
+    # A common approximation is Cs * Annual Expected Shortage
+    # Annual Expected Shortage = E(S) * number of cycles per year
+    # Let's use the provided text's formula structure, which implies E(S) is already an annualized or cycle-based metric.
+    # The provided formula is: TC = Ch * (Avg_Inv) + Cs * E(S)
+    # This implies Ch is per year and E(S) is total units short per year. Let's adjust E(S)
+    # E(S) is per cycle. Cycles per year = D_annual. Let's assume Q=1 for cycles.
+    # However, this leads to huge costs. Let's stick to the direct formula from text, but use Annual Ch.
+    shortage_cost = Cs * es_at_S # The provided text formula implies E(S) is treated simply.
 
-def calculate_s_S_cost(s_candidate, S_candidate, ddlt_table_sorted, D_annual, mu_DL, Cp, Ch, Cs):
-    s_candidate = max(0, s_candidate)
-    S_candidate = max(s_candidate, S_candidate)
-    Q_val = S_candidate - s_candidate
-    if Q_val <= 0:
-        return float('inf')
-    es_at_s = get_es_from_r(s_candidate, ddlt_table_sorted)
-    ordering_cost = (D_annual / Q_val) * Cp
-    holding_cost = (Q_val / 2 + s_candidate - mu_DL + es_at_s) * Ch * 365 # Annualized
-    shortage_cost = (D_annual/ Q_val) * Cs * es_at_s
-    total_cost = ordering_cost + holding_cost + shortage_cost
+    # Total Cost - a simpler interpretation based on the source text
+    total_cost = holding_cost + shortage_cost
     return total_cost
 
 def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
@@ -185,7 +193,7 @@ def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
     min_cost = float('inf')
     search_range = np.arange(lower_bound, upper_bound + step_size, step_size)
     
-    progress_bar = st.progress(0)
+    progress_bar = st.progress(0, text="Performing Grid Search...")
     for i, x in enumerate(search_range):
         current_cost = cost_func(round(x), *cost_args)
         if current_cost < min_cost:
@@ -194,8 +202,6 @@ def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
         progress_bar.progress((i + 1) / len(search_range))
     progress_bar.empty()
     return best_x, min_cost
-
-# ... (Cyclic Coordinate Search and other functions would go here if needed)
 
 # --- Streamlit App UI ---
 st.title("🎓 Master's Independent Study: Demand & Inventory Analysis")
@@ -219,54 +225,46 @@ if uploaded_file is not None:
         st.sidebar.markdown("---")
         st.sidebar.header("2. Analysis Parameters")
         
-        # Chapter 2 & 3 Inputs
         max_demand_threshold = st.sidebar.slider(
-            "Demand Outlier Threshold", 
-            min_value=300, max_value=1500, value=700, step=10,
+            "Demand Outlier Threshold", min_value=300, max_value=1500, value=700, step=10,
             help="Any daily demand exceeding this value will be excluded from the analysis."
         )
-
-        # Chapter 5 Input
         lead_time_days = st.sidebar.slider(
-            "Lead Time (Days)",
-            min_value=1, max_value=10, value=2, step=1,
+            "Lead Time (Days)", min_value=1, max_value=10, value=2, step=1,
             help="The fixed lead time in days for order replenishment."
         )
 
-        # Process data based on sidebar inputs
         raw_df = st.session_state.processed_data['raw_data_df']
         agg_df = preprocess_and_aggregate_demand(raw_df, 'Date', 'Units Sold')
         final_demand_df = filter_and_sort_demand(agg_df, max_demand_threshold)
         st.session_state.processed_data['final_demand_df'] = final_demand_df
         
-        # --- Main Panel for Outputs ---
         st.header("Chapter 1-4: Demand Analysis")
         with st.expander("Show/Hide Demand Analysis Details", expanded=True):
             if final_demand_df is not None:
                 analyze_and_visualize_distribution(final_demand_df, title_suffix=f"(Max Demand ≤ {max_demand_threshold})")
                 
-        # --- DDLT and Shortage Calculation ---
         st.header("Chapter 5-6: Lead Time Demand & Expected Shortage")
         with st.expander("Show/Hide Lead Time & Shortage Tables", expanded=False):
             with st.spinner(f"Calculating distribution for a {lead_time_days}-day lead time..."):
                 demand_prob_table = calculate_demand_frequency_and_probability(final_demand_df)
                 ddlt_prob_table = calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_days)
-                st.session_state.processed_data['ddlt_prob_table'] = ddlt_prob_table
             
-            if ddlt_prob_table is not in st.session_state.processed_data or st.session_state.processed_data['ddlt_prob_table'] is None:
-                 st.error("Could not calculate DDLT probability.")
+            # --- FIX IS HERE ---
+            if ddlt_prob_table is None:
+                st.error("Could not calculate DDLT probability.")
             else:
-                 st.subheader(f"Demand During Lead Time ({lead_time_days} days)")
-                 st.dataframe(st.session_state.processed_data['ddlt_prob_table'].head())
+                st.session_state.processed_data['ddlt_prob_table'] = ddlt_prob_table
+                st.subheader(f"Demand During Lead Time ({lead_time_days} days)")
+                st.dataframe(ddlt_prob_table.head())
 
-                 with st.spinner("Calculating Expected Shortage (E(S))..."):
+                with st.spinner("Calculating Expected Shortage (E(S))..."):
                     final_ddlt_with_shortage = calculate_expected_shortage(ddlt_prob_table)
                     st.session_state.processed_data['final_ddlt_with_shortage'] = final_ddlt_with_shortage
 
-                 st.subheader("Expected Shortage (E(S)) vs. Reorder Point (R)")
-                 st.dataframe(st.session_state.processed_data['final_ddlt_with_shortage'].head())
+                st.subheader("Expected Shortage (E(S)) vs. Reorder Point (R)")
+                st.dataframe(final_ddlt_with_shortage.head())
         
-        # --- Chapter 8: Basestock Policy Optimization ---
         st.sidebar.markdown("---")
         st.sidebar.header("3. Cost Parameters")
         
@@ -274,37 +272,34 @@ if uploaded_file is not None:
             st.subheader("Enter Cost Values")
             cp_cost = st.number_input("Ordering Cost (Cp) / order", min_value=0.0, value=10.0, step=1.0)
             product_cost = st.number_input("Product Cost / unit", min_value=0.0, value=50.0, step=1.0)
-            h_percent = st.slider("Daily Holding Cost (h)", 0, 100, 10, help="As a % of product cost per unit-day")
-            s_percent = st.slider("Shortage Cost (s)", 0, 100, 30, help="As a % of product cost per unit")
+            h_percent_annual = st.slider("Annual Holding Rate (h)", 0, 100, 10, help="As an annual % of product cost.")
+            s_percent = st.slider("Shortage Cost Rate (s)", 0, 100, 30, help="As a % of product cost per unit.")
             submitted = st.form_submit_button("🚀 Run Basestock Optimization")
 
         if submitted:
-            if 'final_ddlt_with_shortage' in st.session_state.processed_data and st.session_state.processed_data['final_ddlt_with_shortage'] is not None:
+            if st.session_state.processed_data.get('final_ddlt_with_shortage') is not None:
                 st.header("Chapter 8: Optimal Basestock Policy")
                 
-                # Derive parameters
                 final_ddlt = st.session_state.processed_data['final_ddlt_with_shortage']
                 daily_avg_demand = st.session_state.processed_data['final_demand_df']['Total_Demand'].mean()
                 D_annual = daily_avg_demand * 365
                 mu_DL = daily_avg_demand * lead_time_days
-                Ch = product_cost * (h_percent / 100)
+                Ch_annual = product_cost * (h_percent_annual / 100)
                 Cs = product_cost * (s_percent / 100)
 
-                # Define search bounds for Grid Search
                 min_R_ddlt = final_ddlt['R'].min()
                 max_R_ddlt = final_ddlt['R'].max()
                 search_lower_bound = max(0, min_R_ddlt)
-                search_upper_bound = max_R_ddlt + 100 # Search a bit beyond the max observed DDLT
+                search_upper_bound = max_R_ddlt + int(daily_avg_demand * 5)
 
-                st.info("Performing Grid Search to find the optimal Basestock Level (S)...")
-                with st.spinner("Searching... this may take a moment."):
+                with st.spinner("Searching for optimal Basestock Level (S)... This may take a moment."):
                     optimal_S, min_cost = grid_search(
                         calculate_basestock_cost,
                         search_lower_bound,
                         search_upper_bound,
-                        1,  # Step size of 1 unit
+                        1,
                         final_ddlt.sort_values(by='R').reset_index(drop=True),
-                        mu_DL, Ch, Cs
+                        mu_DL, Ch_annual, Cs, D_annual
                     )
 
                 st.balloons()
@@ -315,17 +310,18 @@ if uploaded_file is not None:
                 col1.metric("Optimal Basestock Level (S)", f"{optimal_S:,.0f} units")
                 col2.metric("Minimum Annual Cost", f"{min_cost:,.2f} THB")
                 
-                with st.expander("View Cost Parameters Used"):
+                with st.expander("View Cost & Demand Parameters Used"):
                     st.json({
-                        "Ordering Cost (Cp)": f"{cp_cost} THB/order",
+                        "Ordering Cost (Cp)": f"{cp_cost} THB/order (Note: Not used in Basestock cost formula)",
                         "Product Cost": f"{product_cost} THB/unit",
-                        "Daily Holding Cost (Ch)": f"{Ch:.4f} THB/unit-day",
+                        "Annual Holding Cost (Ch)": f"{Ch_annual:.4f} THB/unit-year",
                         "Shortage Cost (Cs)": f"{Cs:.2f} THB/unit",
                         "Avg Daily Demand": f"{daily_avg_demand:.2f} units/day",
+                        "Annual Demand (D)": f"{D_annual:,.0f} units/year",
+                        "Avg Demand During Lead Time (μ_DL)": f"{mu_DL:,.2f} units",
                         "Lead Time": f"{lead_time_days} days"
                     })
             else:
                 st.error("Cannot run optimization. Please ensure data is loaded and processed first.")
-
 else:
     st.info("👋 Welcome! Please upload your demand data using the sidebar to begin the analysis.")
