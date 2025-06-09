@@ -25,7 +25,7 @@ st.set_page_config(
 # Chapter 1
 def load_and_inspect_data(file_path):
     try:
-        df = pd.read_excel('https://github.com/flook25/-Independence-study/blob/main/Raw_Data.xlsx')
+        df = pd.read_csv(file_path)
         st.success(f"✅ Data successfully loaded!")
         st.info("🔍 First 5 rows of the raw data:")
         st.dataframe(df.head())
@@ -192,8 +192,15 @@ def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
 
 # --- Streamlit App UI ---
 st.title("🎓 Master's Independent Study: Demand & Inventory Analysis")
+
+# --- ADDED: Advisor's Name ---
+st.markdown("#### *Advised by: DR. JIRACHAI BUDDHAKULSOMSIRI*")
+st.markdown("---")
+
 st.markdown("Welcome! This app guides you through analyzing historical demand data to determine optimal inventory policies.")
 
+# --- ADDED: SIIT Logo in Sidebar ---
+st.sidebar.image("https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png", width=250)
 st.sidebar.header("⚙️ Control Panel")
 uploaded_file = st.sidebar.file_uploader("1. Upload Raw Data CSV", type=['csv'])
 
