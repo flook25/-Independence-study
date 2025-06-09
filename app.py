@@ -25,7 +25,7 @@ st.set_page_config(
 # Chapter 1
 def load_and_inspect_data(file_path):
     try:
-        df = pd.read_csv(file_path)
+        df = pd.read_excel('https://github.com/flook25/-Independence-study/blob/main/Raw_Data.xlsx')
         st.success(f"✅ Data successfully loaded!")
         st.info("🔍 First 5 rows of the raw data:")
         st.dataframe(df.head())
