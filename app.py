@@ -21,6 +21,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- Helper function for CSV download ---
+@st.cache_data
+def convert_df_to_csv(df):
+    """Converts a DataFrame to a CSV string for downloading."""
+    return df.to_csv(index=False).encode('utf-8')
+
 # --- All Functions from the Original Script ---
 # Chapter 1
 def load_and_inspect_data(file_path):
@@ -192,14 +198,10 @@ def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
 
 # --- Streamlit App UI ---
 st.title("🎓 Master's Independent Study: Demand & Inventory Analysis")
-
-# --- ADDED: Advisor's Name ---
 st.markdown("#### *Advised by: DR. JIRACHAI BUDDHAKULSOMSIRI*")
 st.markdown("---")
-
 st.markdown("Welcome! This app guides you through analyzing historical demand data to determine optimal inventory policies.")
 
-# --- ADDED: SIIT Logo in Sidebar ---
 st.sidebar.image("https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png", width=250)
 st.sidebar.header("⚙️ Control Panel")
 uploaded_file = st.sidebar.file_uploader("1. Upload Raw Data CSV", type=['csv'])
@@ -236,7 +238,7 @@ if uploaded_file is not None:
                 analyze_and_visualize_distribution(final_demand_df, title_suffix=f"(Max Demand ≤ {max_demand_threshold})")
                 
         st.header("Chapter 5-6: Lead Time Demand & Expected Shortage")
-        with st.expander("Show/Hide Lead Time & Shortage Tables", expanded=False):
+        with st.expander("Show/Hide Lead Time & Shortage Tables", expanded=True): # Changed to expanded=True for visibility
             with st.spinner(f"Calculating distribution for a {lead_time_days}-day lead time..."):
                 demand_prob_table = calculate_demand_frequency_and_probability(final_demand_df)
                 ddlt_prob_table = calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_days)
@@ -246,14 +248,36 @@ if uploaded_file is not None:
             else:
                 st.session_state.processed_data['ddlt_prob_table'] = ddlt_prob_table
                 st.subheader(f"Demand During Lead Time ({lead_time_days} days)")
-                st.dataframe(ddlt_prob_table.head())
+                
+                # --- CHANGE 1: Display full DataFrame ---
+                st.dataframe(ddlt_prob_table)
+                
+                # --- CHANGE 2: Add Download Button ---
+                csv_ddlt = convert_df_to_csv(ddlt_prob_table)
+                st.download_button(
+                    label="📥 Download DDLT Data as CSV",
+                    data=csv_ddlt,
+                    file_name=f'ddlt_probability_{lead_time_days}days.csv',
+                    mime='text/csv',
+                )
 
                 with st.spinner("Calculating Expected Shortage (E(S))..."):
                     final_ddlt_with_shortage = calculate_expected_shortage(ddlt_prob_table)
                     st.session_state.processed_data['final_ddlt_with_shortage'] = final_ddlt_with_shortage
 
                 st.subheader("Expected Shortage (E(S)) vs. Reorder Point (R)")
-                st.dataframe(final_ddlt_with_shortage.head())
+                
+                # --- CHANGE 1: Display full DataFrame ---
+                st.dataframe(final_ddlt_with_shortage)
+
+                # --- CHANGE 2: Add Download Button ---
+                csv_es = convert_df_to_csv(final_ddlt_with_shortage)
+                st.download_button(
+                    label="📥 Download E(S) Data as CSV",
+                    data=csv_es,
+                    file_name=f'expected_shortage_{lead_time_days}days.csv',
+                    mime='text/csv',
+                )
         
         st.sidebar.markdown("---")
         st.sidebar.header("3. Cost Parameters")
