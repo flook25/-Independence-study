@@ -1,3 +1,11 @@
+# IMPORTANT: This app requires a `requirements.txt` file in the same directory
+# with the following content:
+# streamlit
+# pandas
+# matplotlib
+# seaborn
+# numpy
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -106,29 +114,23 @@ def calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_d
     if demand_prob_table is None or demand_prob_table.empty:
         return None
     
-    # This calculation is a convolution. We can use numpy for efficiency.
-    # Get the demand values and their probabilities
     demands = demand_prob_table['Total_Demand'].values
     probs = demand_prob_table['Probability'].values
     
-    # Create a full probability distribution array (can be large)
     max_daily_demand = int(demands.max())
     full_probs = np.zeros(max_daily_demand + 1)
     full_probs[demands.astype(int)] = probs
 
-    # Convolve the distribution with itself (lead_time_days - 1) times
     convolved_probs = full_probs
     for _ in range(lead_time_days - 1):
         convolved_probs = np.convolve(convolved_probs, full_probs)
 
-    # Create the final DataFrame
     final_demands = np.arange(len(convolved_probs))
     final_lead_time_dist = pd.DataFrame({
         'Demand_During_LeadTime': final_demands,
         'Probability': convolved_probs
     })
     
-    # Filter out zero probabilities to keep table size manageable
     final_lead_time_dist = final_lead_time_dist[final_lead_time_dist['Probability'] > 1e-9].copy()
     
     final_lead_time_dist = final_lead_time_dist.sort_values(by='Demand_During_LeadTime').reset_index(drop=True)
@@ -137,7 +139,7 @@ def calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_d
 
 # Chapter 6
 @st.cache_data
-def calculate_expected_shortage(_ddlt_prob_table): # Use leading _ to avoid cache issues with mutable objects
+def calculate_expected_shortage(_ddlt_prob_table): 
     if _ddlt_prob_table is None or _ddlt_prob_table.empty:
         return None
     df = _ddlt_prob_table.copy()
@@ -145,7 +147,6 @@ def calculate_expected_shortage(_ddlt_prob_table): # Use leading _ to avoid cach
     df['R'] = df['Demand_During_LeadTime']
     df['x_fx'] = df['Demand_During_LeadTime'] * df['Probability']
     
-    # Efficient calculation using cumulative sums
     sum_xfx_total = df['x_fx'].sum()
     df['Sum_xfx_Rplus1'] = sum_xfx_total - df['x_fx'].cumsum()
     df['Sum_R_fx_Rplus1'] = df['R'] * (1 - df['CSL'])
@@ -155,13 +156,11 @@ def calculate_expected_shortage(_ddlt_prob_table): # Use leading _ to avoid cach
 
 # Chapter 8 Functions
 def get_es_from_r(R_val, ddlt_table_sorted):
-    # Since ddlt_table_sorted['R'] are discrete, find the closest available R
     if R_val in ddlt_table_sorted['R'].values:
         return ddlt_table_sorted.loc[ddlt_table_sorted['R'] == R_val, 'E_S'].iloc[0]
     else:
-        # Find index of R just greater than or equal to R_val using searchsorted
         idx = ddlt_table_sorted['R'].searchsorted(R_val, side='left')
-        if idx == len(ddlt_table_sorted): # If R_val is greater than all R's
+        if idx == len(ddlt_table_sorted):
             idx = len(ddlt_table_sorted) - 1
         return ddlt_table_sorted.loc[idx, 'E_S']
 
@@ -169,22 +168,10 @@ def calculate_basestock_cost(S_candidate, ddlt_table_sorted, mu_DL, Ch_annual, C
     S_candidate = max(0, S_candidate)
     es_at_S = get_es_from_r(S_candidate, ddlt_table_sorted)
     
-    # Annual Holding Cost
     avg_inventory = S_candidate - mu_DL + es_at_S
     holding_cost = Ch_annual * avg_inventory
+    shortage_cost = Cs * es_at_S 
     
-    # Annual Shortage Cost
-    # Shortages occur with a certain frequency (D/Q). In Basestock, Q is effectively 1, but this model is simplified.
-    # A common approximation is Cs * Annual Expected Shortage
-    # Annual Expected Shortage = E(S) * number of cycles per year
-    # Let's use the provided text's formula structure, which implies E(S) is already an annualized or cycle-based metric.
-    # The provided formula is: TC = Ch * (Avg_Inv) + Cs * E(S)
-    # This implies Ch is per year and E(S) is total units short per year. Let's adjust E(S)
-    # E(S) is per cycle. Cycles per year = D_annual. Let's assume Q=1 for cycles.
-    # However, this leads to huge costs. Let's stick to the direct formula from text, but use Annual Ch.
-    shortage_cost = Cs * es_at_S # The provided text formula implies E(S) is treated simply.
-
-    # Total Cost - a simpler interpretation based on the source text
     total_cost = holding_cost + shortage_cost
     return total_cost
 
@@ -207,16 +194,13 @@ def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
 st.title("🎓 Master's Independent Study: Demand & Inventory Analysis")
 st.markdown("Welcome! This app guides you through analyzing historical demand data to determine optimal inventory policies.")
 
-# --- Sidebar for Navigation and Inputs ---
 st.sidebar.header("⚙️ Control Panel")
 uploaded_file = st.sidebar.file_uploader("1. Upload Raw Data CSV", type=['csv'])
 
-# Initialize session state
 if 'processed_data' not in st.session_state:
     st.session_state.processed_data = {}
 
 if uploaded_file is not None:
-    # --- Load and Process Data ---
     if 'raw_data_df' not in st.session_state.processed_data:
          with st.spinner("Loading and inspecting data..."):
             st.session_state.processed_data['raw_data_df'] = load_and_inspect_data(uploaded_file)
@@ -250,7 +234,6 @@ if uploaded_file is not None:
                 demand_prob_table = calculate_demand_frequency_and_probability(final_demand_df)
                 ddlt_prob_table = calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_days)
             
-            # --- FIX IS HERE ---
             if ddlt_prob_table is None:
                 st.error("Could not calculate DDLT probability.")
             else:
@@ -289,8 +272,8 @@ if uploaded_file is not None:
 
                 min_R_ddlt = final_ddlt['R'].min()
                 max_R_ddlt = final_ddlt['R'].max()
-                search_lower_bound = max(0, min_R_ddlt)
-                search_upper_bound = max_R_ddlt + int(daily_avg_demand * 5)
+                search_lower_bound = max(0, int(min_R_ddlt))
+                search_upper_bound = int(max_R_ddlt + (daily_avg_demand * 5))
 
                 with st.spinner("Searching for optimal Basestock Level (S)... This may take a moment."):
                     optimal_S, min_cost = grid_search(
