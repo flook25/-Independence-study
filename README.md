@@ -87,7 +87,7 @@ $$
 
 You can explore the simulation logic and interact with the model directly via the Google Colab notebook, which replicates the spreadsheet logic in Python for demonstration.
 
-<a href="https://colab.research.google.com/drive/1ZKxxbaGxrzy3-DLhAEYlIKTKCAnKtrf1?usp=sharing">
+<a href="https://colab.research.google.com/drive/1nK3HDVqRV0LsUoBWYJ7xA5UpgMg--M_R?usp=sharing">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 
