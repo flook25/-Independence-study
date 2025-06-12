@@ -104,7 +104,7 @@ You can explore the simulation logic and interact with the model directly via th
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://lh6.googleusercontent.com/uRbvaXs8JX4BmFXOXmr_11oAZO2PPEWxi7Epn-ZaMYWlxhtZxIZoqXwEvmw-7aPhZ9c7LmQyz7lrwI_vaqKlWH2yc_lT_Hn_sB4vr370UNLGHr8Eor5OGgBWUhpCDrdJZvM3CZUlPNgeosiG8V1Be4ee5rF9776gfjj7l8-xjl1e1lFWHRd-lQ=w1280" alt="Dr. Jirachai Buddhakulsomsiri" width="160" style="border-radius: 50%;"/>
+  <img src="https://lh4.googleusercontent.com/G30oFZqfkJAtqUFdqu-3V1SrskHaLGCFRjX917IGZVohhNN-0F2ST1t63NTEkhDoAPpKBhBh3vgmrcqYd1RRer1YjZT6Fq2NUl31kp9c8LTfJtkd-c8XthUvaODkbRakbDUGyajLcfO4ptuxl5MTGawcNEtuolC8cs_P-sW-2z-vm86xqMGBaQ=w1280" alt="Dr. Jirachai Buddhakulsomsiri" width="160" style="border-radius: 50%;"/>
   <br>
   <b>Dr. Jirachai Buddhakulsomsiri</b>
   <p>Associate Professor<br>Sirindhorn International Institute of Technology (SIIT)</p>
