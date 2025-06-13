@@ -39,7 +39,7 @@ def load_and_inspect_data(uploaded_file):
         # Check the file extension to use the correct pandas function
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
-        elif uploaded_file.name.endswith('.xlsx'):
+        elif uploaded_file.name.endswith(('.xls', '.xlsx')):
             # Requires the 'openpyxl' library
             df = pd.read_excel(uploaded_file)
         else:
@@ -61,7 +61,6 @@ def preprocess_and_aggregate_demand(df, day_col, demand_col):
     if day_col not in df.columns or demand_col not in df.columns:
         st.error(f"❌ Error: One or more required columns ('{day_col}', '{demand_col}') not found.")
         return None
-
     processed_df = df.copy()
     processed_df[demand_col] = pd.to_numeric(processed_df[demand_col], errors='coerce')
     initial_rows = len(processed_df)
@@ -70,7 +69,6 @@ def preprocess_and_aggregate_demand(df, day_col, demand_col):
         st.warning(f"🗑️ Removed {initial_rows - len(processed_df)} rows with non-numeric or missing demand values.")
     else:
         st.success("✅ No non-numeric or missing demand values found to remove.")
-
     daily_total_demand = processed_df.groupby(day_col)[demand_col].sum().reset_index()
     daily_total_demand.rename(columns={demand_col: 'Total_Demand'}, inplace=True)
     st.info(f"📊 Aggregated total demand for {len(daily_total_demand)} unique days.")
@@ -81,28 +79,23 @@ def filter_and_sort_demand(daily_demand_df, max_demand_threshold):
     if daily_demand_df is None or daily_demand_df.empty:
         st.warning("⚠️ No data to filter or sort.")
         return None
-
     initial_rows = len(daily_demand_df)
     filtered_df = daily_demand_df[daily_demand_df['Total_Demand'] <= max_demand_threshold].copy()
-    filtered_rows = len(filtered_df)
-
-    if initial_rows > filtered_rows:
-        st.info(f"✂️ Successfully filtered out {initial_rows - filtered_rows} days with Total_Demand > {max_demand_threshold}.")
+    if len(filtered_df) < initial_rows:
+        st.info(f"✂️ Successfully filtered out {initial_rows - len(filtered_df)} days with Total_Demand > {max_demand_threshold}.")
     else:
         st.success("✅ No demand values found above the threshold to remove.")
-
     sorted_df = filtered_df.sort_values(by='Total_Demand', ascending=True)
     return sorted_df
 
 # Chapter 4
 def calculate_demand_frequency_and_probability(daily_demand_df):
     if daily_demand_df is None or 'Total_Demand' not in daily_demand_df.columns or daily_demand_df.empty:
-        st.warning("⚠️ Cannot calculate frequency and probability: 'Total_Demand' column not found or DataFrame is empty.")
+        st.warning("⚠️ Cannot calculate frequency and probability: DataFrame is empty.")
         return None
     demand_counts = daily_demand_df['Total_Demand'].value_counts().reset_index()
     demand_counts.columns = ['Total_Demand', 'Frequency']
-    total_observations = demand_counts['Frequency'].sum()
-    demand_counts['Probability'] = demand_counts['Frequency'] / total_observations
+    demand_counts['Probability'] = demand_counts['Frequency'] / demand_counts['Frequency'].sum()
     demand_counts = demand_counts.sort_values(by='Total_Demand').reset_index(drop=True)
     return demand_counts
 
@@ -139,9 +132,8 @@ def calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_d
     final_demands = np.arange(len(convolved_probs))
     final_lead_time_dist = pd.DataFrame({'Demand_During_LeadTime': final_demands, 'Probability': convolved_probs})
     final_lead_time_dist = final_lead_time_dist[final_lead_time_dist['Probability'] > 1e-9].copy()
-    final_lead_time_dist = final_lead_time_dist.sort_values(by='Demand_During_LeadTime').reset_index(drop=True)
     final_lead_time_dist['CSL'] = final_lead_time_dist['Probability'].cumsum()
-    return final_lead_time_dist
+    return final_lead_time_dist.sort_values(by='Demand_During_LeadTime').reset_index(drop=True)
 
 # Chapter 6
 @st.cache_data
@@ -172,27 +164,23 @@ def calculate_basestock_cost(S_candidate, ddlt_table_sorted, mu_DL, Ch_annual, C
     S_candidate = max(0, S_candidate)
     es_at_S = get_es_from_r(S_candidate, ddlt_table_sorted)
     
-    # 1. Ordering Cost
-    # Approx. number of orders/year = Annual Demand / Avg Daily Demand
-    # This assumes an order is placed on average once per day.
-    if mu_D > 0:
-        num_orders_per_year = D_annual / mu_D
-    else:
-        num_orders_per_year = 0
-    ordering_cost = num_orders_per_year * Cp
+    # 1. Ordering Cost: Approx. number of orders/year * Cp
+    # In Basestock, an order is triggered by any demand, so num_orders is high. A common approx. is D_annual.
+    ordering_cost = D_annual * Cp
 
     # 2. Holding Cost
-    # Following the (Q,R) model structure for consistency
-    avg_inventory_base = S_candidate - mu_DL
     if case_type == 'Lost Sales':
-        # In lost sales, inventory is held to cover safety stock + expected shortage (as per user's formula example)
-        holding_cost = Ch_annual * (avg_inventory_base + es_at_S)
+        # Average inventory is higher because safety stock must cover shortages that can't be backfilled.
+        avg_inventory = S_candidate - mu_DL + es_at_S
     else: # Backlog Case
-        holding_cost = Ch_annual * avg_inventory_base
+        # Backlogged demand doesn't affect physical on-hand inventory level.
+        avg_inventory = S_candidate - mu_DL
         
-    # 3. Shortage Cost
-    # Annual expected units short = E(S) per cycle * number of cycles per year
-    annual_shortage_units = es_at_S * num_orders_per_year
+    holding_cost = Ch_annual * avg_inventory
+        
+    # 3. Shortage Cost: Annual expected units short * Cs
+    # Annual expected units short = E(S) per cycle * number of cycles per year (D_annual)
+    annual_shortage_units = es_at_S * D_annual
     shortage_cost = Cs * annual_shortage_units
     
     total_cost = ordering_cost + holding_cost + shortage_cost
@@ -337,4 +325,4 @@ if uploaded_file is not None:
             else:
                 st.error("Cannot run optimization. Please ensure data is loaded and processed first.")
 else:
-    st.info("👋 Welcome! Please upload your demand data using the sidebar to begin the analysis.")
+    st.info("👋 Welcome! Please upload your demand data (CSV or XLSX) using the sidebar to begin the analysis.")
