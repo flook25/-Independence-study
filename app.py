@@ -147,7 +147,7 @@ def calculate_expected_shortage(_ddlt_prob_table):
     df['E_S'] = (df['Sum_xfx_Rplus1'] - df['Sum_R_fx_Rplus1']).clip(lower=0)
     return df[['R', 'Probability', 'CSL', 'E_S']]
 
-# >>> Chapter 7: New Function for (Q, R) Iterative Optimization <<<
+# >>> Chapter 7: Function for (Q, R) Iterative Optimization <<<
 def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
                     cp_ordering_cost, product_cost, h_percent_annual, s_percent,
                     service_level_type='backlog', convergence_tolerance=0.001, max_iterations=100):
@@ -182,10 +182,12 @@ def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
         # --- Step 2: Determine Optimal CSL* ---
         if service_level_type == 'backlog':
             csl_star = 1 - (Q * Ch_annual) / (D_annual * Cs_per_unit)
-        elif service_level_type == 'lost_sale':
+        # --- THIS IS THE FIX: Changed 'lost_sale' to 'lost_sales' to match UI ---
+        elif service_level_type == 'lost_sales':
+            # This formula is the algebraic equivalent of the one in the image
             csl_star = (D_annual * Cs_per_unit) / ((D_annual * Cs_per_unit) + (Q * Ch_annual))
         else:
-            st.error("❌ Error: Invalid service_level_type.")
+            st.error(f"❌ Error: Invalid service_level_type received: '{service_level_type}'. Check code logic.")
             return None
         csl_star = max(0, min(1, csl_star))
 
@@ -203,12 +205,12 @@ def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
         ordering_cost = (D_annual / Q) * Cp
         if service_level_type == 'backlog':
             holding_cost = ((Q / 2) + R - mu_DL) * Ch_annual
-        else: # Lost Sale
+        else: # Lost Sales
             holding_cost = ((Q / 2) + R - mu_DL + es_at_R) * Ch_annual
         shortage_cost = (D_annual / Q) * Cs_per_unit * es_at_R
         TAC = ordering_cost + holding_cost + shortage_cost
 
-        # --- LOG HISTORY (CORRECTED) ---
+        # --- LOG HISTORY ---
         optimization_history.append({
             'Iteration': iteration,
             'Q_old': Q_old,
@@ -252,7 +254,6 @@ if 'processed_data' not in st.session_state:
     st.session_state.processed_data = {}
 
 if uploaded_file is not None:
-    # Use a flag to ensure data is loaded only once per upload
     if 'file_name' not in st.session_state.processed_data or st.session_state.processed_data['file_name'] != uploaded_file.name:
         with st.spinner("Loading and inspecting data..."):
             st.session_state.processed_data['raw_data_df'] = load_and_inspect_data(uploaded_file)
@@ -265,13 +266,11 @@ if uploaded_file is not None:
         max_demand_threshold = st.sidebar.slider("Demand Outlier Threshold", 300, 1500, 700, 10, help="Any daily demand > this value will be excluded.")
         lead_time_days = st.sidebar.slider("Lead Time (Days)", 1, 10, 2, 1, help="Fixed lead time for order replenishment.")
 
-        # --- DATA PROCESSING PIPELINE ---
         raw_df = st.session_state.processed_data['raw_data_df']
         agg_df = preprocess_and_aggregate_demand(raw_df, 'Date', 'Units Sold')
         final_demand_df = filter_and_sort_demand(agg_df, max_demand_threshold)
         st.session_state.processed_data['final_demand_df'] = final_demand_df
 
-        # --- Display Chapters 1-6 ---
         st.header("Chapter 1-4: Demand Analysis")
         with st.expander("Show/Hide Demand Analysis Details", expanded=True):
             if final_demand_df is not None:
@@ -297,7 +296,6 @@ if uploaded_file is not None:
             else:
                  st.error("Could not calculate DDLT or E(S) tables.")
 
-        # --- Sidebar Form for Cost Parameters & Optimization Run ---
         st.sidebar.markdown("---")
         st.sidebar.header("3. Cost & Policy Parameters")
         with st.sidebar.form(key='cost_form'):
@@ -310,15 +308,12 @@ if uploaded_file is not None:
             st.subheader("Select Inventory Case")
             case_type = st.radio("Shortage Scenario", ('Lost Sales', 'Backlog'), help="Determines the cost formula used for shortages.")
             
-            # --- UPDATED: Submit button for (Q, R) Optimization ---
             submitted = st.form_submit_button("🚀 Run (Q, R) Optimization")
 
         if submitted:
-            # --- Chapter 7: Run Optimization and Display Results ---
             if 'final_ddlt_with_shortage' in st.session_state.processed_data:
                 st.header("Chapter 7: Optimal (Q, R) Policy")
 
-                # Prepare parameters for the function
                 final_ddlt = st.session_state.processed_data['final_ddlt_with_shortage']
                 daily_avg_demand = st.session_state.processed_data['final_demand_df']['Total_Demand'].mean()
                 
@@ -343,20 +338,17 @@ if uploaded_file is not None:
                     st.balloons()
                     st.subheader(f"Optimal (Q, R) System Parameters ({case_type} Case)")
                     
-                    # --- Display Key Metrics ---
                     col1, col2, col3 = st.columns(3)
                     col1.metric("Optimal Order Quantity (Q)", f"{qr_results['optimal_Q']:,.0f} units")
                     col2.metric("Optimal Reorder Point (R)", f"{qr_results['optimal_R']:,.0f} units")
                     col3.metric("Minimum Annual Cost (TAC)", f"{qr_results['min_TAC']:,.2f} THB")
                     
-                    # --- Display Convergence Plot and History Table ---
                     with st.expander("🔎 View Optimization Convergence Details", expanded=True):
                         history_df = qr_results['history']
                         
                         st.subheader("Convergence Plot")
                         fig, ax1 = plt.subplots(figsize=(12, 6))
 
-                        # Plot Q on the primary y-axis
                         color = 'tab:blue'
                         ax1.set_xlabel('Iteration', fontsize=14)
                         ax1.set_ylabel('Order Quantity (Q)', color=color, fontsize=14)
@@ -364,7 +356,6 @@ if uploaded_file is not None:
                         ax1.tick_params(axis='y', labelcolor=color)
                         ax1.grid(True, which='both', linestyle='--', linewidth=0.5)
 
-                        # Create a second y-axis for TAC
                         ax2 = ax1.twinx()
                         color = 'tab:red'
                         ax2.set_ylabel('Total Annual Cost (TAC)', color=color, fontsize=14)
@@ -383,7 +374,6 @@ if uploaded_file is not None:
                             'E_S_at_R': '{:.4f}',
                             'TAC': '{:,.2f}'
                         }))
-
             else:
                 st.error("❌ Cannot run optimization. Data processing is not complete. Please ensure data is loaded.")
 else:
