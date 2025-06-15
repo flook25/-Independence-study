@@ -79,7 +79,7 @@ def convert_df_to_csv(df):
     """Converts a DataFrame to a CSV string for downloading."""
     return df.to_csv(index=False).encode('utf-8')
 
-def create_progress_indicator(step, total_steps=7):
+def create_progress_indicator(step, total_steps=8):
     """Creates a visual progress indicator"""
     progress = step / total_steps
     st.progress(progress)
@@ -257,66 +257,61 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     
     demand_data = daily_demand_df['Total_Demand']
     
-    # Descriptive statistics in columns
-    st.subheader("📊 Statistical Summary")
-    col1, col2, col3, col4 = st.columns(4)
+    # Statistical Summary and Metrics
+    st.subheader("📊 Descriptive Statistics")
+    st.dataframe(demand_data.describe(), use_container_width=True) # Ensure full dataframe display
     
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric("Mean", f"{demand_data.mean():.1f}")
-        st.metric("Median", f"{demand_data.median():.1f}")
+        st.metric("Skewness", f"{demand_data.skew():.4f}")
     with col2:
-        st.metric("Std Dev", f"{demand_data.std():.1f}")
-        st.metric("Min", f"{demand_data.min():.0f}")
-    with col3:
-        st.metric("Max", f"{demand_data.max():.0f}")
-        st.metric("Range", f"{demand_data.max() - demand_data.min():.0f}")
-    with col4:
-        st.metric("Skewness", f"{demand_data.skew():.3f}")
-        st.metric("Kurtosis", f"{demand_data.kurt():.3f}")
+        st.metric("Kurtosis", f"{demand_data.kurt():.4f}")
     
     # Interactive visualizations
     st.subheader("📈 Interactive Demand Analysis")
     
-    tab1, tab2, tab3 = st.tabs(["📊 Distribution", "📈 Time Series", "📋 Summary Table"])
+    tab1, tab2 = st.tabs(["📊 Distribution", "📈 Time Series"]) # Removed Summary Table tab
     
     with tab1:
-        # Interactive histogram
-        fig = px.histogram(
-            daily_demand_df, 
-            x='Total_Demand',
-            nbins=30,
-            title=f'Daily Demand Distribution {title_suffix}',
-            labels={'Total_Demand': 'Daily Demand (Units)', 'count': 'Frequency'},
-            color_discrete_sequence=['#2980b9']
-        )
-        fig.update_layout(
-            showlegend=False,
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)'
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        # Matplotlib Histogram (as requested)
+        fig_hist, ax_hist = plt.subplots(figsize=(12, 7))
+        sns.histplot(demand_data, kde=True, bins=30, color='#2980b9', edgecolor='black', ax=ax_hist) # Using original app color
+        ax_hist.set_title(f'Distribution of Total Daily Demand {title_suffix}', fontsize=16, fontweight='bold')
+        ax_hist.set_xlabel('Total Daily Demand (Units)', fontsize=14)
+        ax_hist.set_ylabel('Frequency', fontsize=14)
+        ax_hist.grid(axis='y', alpha=0.75, linestyle='--')
+        st.pyplot(fig_hist)
     
     with tab2:
         if 'Date' in daily_demand_df.columns:
-            # Time series plot
-            fig = px.line(
+            # Plotly Time series plot (styled to match example)
+            fig_ts = px.line(
                 daily_demand_df, 
                 x='Date', 
                 y='Total_Demand',
                 title='Demand Over Time',
-                labels={'Total_Demand': 'Daily Demand (Units)'}
+                labels={'Total_Demand': 'Daily Demand (Units)'},
+                line_shape='linear' # Ensure sharp lines as in picture
             )
-            fig.update_traces(line_color='#2980b9')
-            fig.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)'
+            fig_ts.update_traces(mode='lines+markers', marker_symbol='circle', marker_size=7, line_color='blue') # Blue line with circle markers
+            fig_ts.update_layout(
+                plot_bgcolor='white', # White background
+                paper_bgcolor='white', # White paper background
+                font_color='black', # Black font
+                xaxis=dict(showgrid=True, gridcolor='lightgray'), # Light gray grid lines
+                yaxis=dict(showgrid=True, gridcolor='lightgray'),
+                title_font_color='black',
+                hovermode="x unified" # Improve hover experience
             )
-            st.plotly_chart(fig, use_container_width=True)
+            # Add a horizontal dashed line for Reorder Point if needed (conceptual for time series, not from data)
+            # You can add a conceptual dashed line like this if desired:
+            # fig_ts.add_shape(type='line', xref='paper', yref='y',
+            #                 x0=0, y0=500, x1=1, y1=500, # Example y-value for reorder point
+            #                 line=dict(color='orange', width=2, dash='dash'))
+            
+            st.plotly_chart(fig_ts, use_container_width=True)
         else:
             st.info("Date column not available for time series analysis")
-    
-    with tab3:
-        st.dataframe(demand_data.describe().to_frame().T, use_container_width=True)
 
 @st.cache_data
 def calculate_demand_during_lead_time_probability(demand_prob_table, lead_time_days=2):
@@ -481,9 +476,10 @@ def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
 # --- Enhanced Streamlit App UI ---
 def main():
     # Sidebar with enhanced navigation
+    st.sidebar.image("https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png", width=250)
     st.sidebar.markdown("---")
     st.sidebar.header("🎯 Navigation")
-    st.sidebar.image("https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png", width=250)
+    
     
     # File upload section
     st.sidebar.header("📁 Data Upload")
@@ -520,14 +516,14 @@ def main():
                 max_demand_threshold = st.slider(
                     "Max Daily Demand", 
                     int(raw_df['Units Sold'].min()) if 'Units Sold' in raw_df.columns else 300,
-                    int(raw_df['Units Sold'].max() * 1.5) if 'Units Sold' in raw_df.columns else 1500,
+                    int(raw_df['Units Sold'].max() * 2.0) if 'Units Sold' in raw_df.columns else 2000, # Increased upper bound
                     700, 10,
                     help="Filter out extreme demand values"
                 )
             with col2:
                 lead_time_days = st.slider(
                     "Lead Time (Days)", 
-                    1, 10, 2, 1,
+                    1, 20, 2, 1, # Increased upper bound
                     help="Supply lead time in days"
                 )
 
@@ -563,18 +559,21 @@ def main():
                 if ddlt_prob_table is not None:
                     st.session_state.processed_data['ddlt_prob_table'] = ddlt_prob_table
                     
-                    col1, col2 = st.columns(2)
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         st.subheader(f"Lead Time Demand ({lead_time_days} days)")
-                        st.dataframe(ddlt_prob_table.head(20), use_container_width=True)
+                        st.dataframe(ddlt_prob_table, use_container_width=True)
                         
                     final_ddlt_with_shortage = calculate_expected_shortage(ddlt_prob_table)
                     st.session_state.processed_data['final_ddlt_with_shortage'] = final_ddlt_with_shortage
                     
                     with col2:
                         st.subheader("Expected Shortage Analysis")
-                        st.dataframe(final_ddlt_with_shortage.head(20), use_container_width=True)
+                        st.dataframe(final_ddlt_with_shortage, use_container_width=True)
                         
+                    with col3:
+                        st.markdown(f"""<div style='font-size:1.5rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost (TAC)</div><div style='font-size:2rem; font-weight:bold;'>{ddlt_prob_table['E_S'].sum():,.2f} ฿</div>""", unsafe_allow_html=True)
+
                     # Download buttons
                     st.download_button(
                         label="📥 Download DDLT Table",
@@ -674,11 +673,7 @@ def main():
                         help="Reorder point to trigger new orders"
                     )
                 with col3:
-                    st.metric(
-                        "💰 Total Annual Cost (TAC)", 
-                        f"{qr_results['min_TAC']:,.2f} ฿",
-                        help="Minimum total annual cost"
-                    )
+                    st.markdown(f"""<div style='font-size:1.5rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost (TAC)</div><div style='font-size:2rem; font-weight:bold;'>{qr_results['min_TAC']:,.2f} ฿</div>""", unsafe_allow_html=True)
                 with col4:
                     st.metric(
                         "🔁 Iterations", 
@@ -813,8 +808,8 @@ def main():
                 Ch_annual = product_cost * (h_percent / 100.0)
                 Cs_per_unit = product_cost * (s_percent / 100.0)
 
-                # Optimize Basestock (S) system
-                st.subheader("📊 Basestock (S) System Optimization")
+                # Optimize Basestock (T, S) system
+                st.subheader("📊 Basestock (T, S) System Optimization")
                 with st.spinner("Optimizing Basestock level..."):
                     ddlt_table_sorted = final_ddlt.sort_values(by='R').reset_index(drop=True)
                     min_R = ddlt_table_sorted['R'].min()
@@ -856,11 +851,7 @@ def main():
                             help="Target inventory position"
                         )
                     with col2:
-                        st.metric(
-                            "💰 Total Annual Cost",
-                            f"{optimal_basestock_cost:,.2f} ฿",
-                            help="Minimum total annual cost for Basestock system"
-                        )
+                        st.markdown(f"""<div style='font-size:1.2rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost</div><div style='font-size:1.7rem; font-weight:bold;'>{optimal_basestock_cost:,.2f} ฿</div>""", unsafe_allow_html=True)
 
                 # Optimize (s, S) system
                 st.subheader("📈 (s, S) System Optimization")
@@ -914,7 +905,7 @@ def main():
                 # Comparison of all three systems
                 st.subheader("📊 System Comparison")
                 comparison_data = {
-                    'System': ['(Q, R)', 'Basestock (S)', '(s, S)'],
+                    'System': ['(Q, R)', 'Basestock (T, S)', '(s, S)'],
                     'Parameters': [
                         f'Q={qr_results["optimal_Q"]:,.0f}, R={qr_results["optimal_R"]:,.0f}',
                         f'S={optimal_S:,.0f}',
