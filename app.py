@@ -516,7 +516,7 @@ def main():
                 max_demand_threshold = st.slider(
                     "Max Daily Demand", 
                     int(raw_df['Units Sold'].min()) if 'Units Sold' in raw_df.columns else 300,
-                    int(raw_df['Units Sold'].max() * 2.0) if 'Units Sold' in raw_df.columns else 2000, # Increased upper bound
+                    int(raw_df['Units Sold'].max() * 2.0) if 'Units Sold' in raw_df.columns else 10000, # Increased upper bound to 10000
                     700, 10,
                     help="Filter out extreme demand values"
                 )
@@ -571,9 +571,6 @@ def main():
                         st.subheader("Expected Shortage Analysis")
                         st.dataframe(final_ddlt_with_shortage, use_container_width=True)
                         
-                    with col3:
-                        st.markdown(f"""<div style='font-size:1.5rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost (TAC)</div><div style='font-size:2rem; font-weight:bold;'>{ddlt_prob_table['E_S'].sum():,.2f} ฿</div>""", unsafe_allow_html=True)
-
                     # Download buttons
                     st.download_button(
                         label="📥 Download DDLT Table",
@@ -673,8 +670,6 @@ def main():
                         help="Reorder point to trigger new orders"
                     )
                 with col3:
-                    st.markdown(f"""<div style='font-size:1.5rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost (TAC)</div><div style='font-size:2rem; font-weight:bold;'>{qr_results['min_TAC']:,.2f} ฿</div>""", unsafe_allow_html=True)
-                with col4:
                     st.metric(
                         "🔁 Iterations", 
                         f"{qr_results['convergence_iterations']}",
