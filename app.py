@@ -670,6 +670,8 @@ def main():
                         help="Reorder point to trigger new orders"
                     )
                 with col3:
+                    st.markdown(f"""<div style='font-size:1.5rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost (TAC)</div><div style='font-size:2rem; font-weight:bold;'>{qr_results['min_TAC']:,.2f} ฿</div>""", unsafe_allow_html=True)
+                with col4:
                     st.metric(
                         "🔁 Iterations", 
                         f"{qr_results['convergence_iterations']}",
@@ -803,6 +805,9 @@ def main():
                 Ch_annual = product_cost * (h_percent / 100.0)
                 Cs_per_unit = product_cost * (s_percent / 100.0)
 
+                # Display average daily demand
+                st.info(f"📊 Average Daily Demand used for calculations: **{daily_avg_demand:,.2f}** units/day")
+
                 # Optimize Basestock (T, S) system
                 st.subheader("📊 Basestock (T, S) System Optimization")
                 with st.spinner("Optimizing Basestock level..."):
@@ -815,7 +820,7 @@ def main():
                     S_lower = min(S_lower, int(min_R - 50))
                     S_upper = max(S_upper, int(max_R + 50))
 
-                    optimal_S = grid_search(
+                    optimal_S_basestock = grid_search(
                         calculate_basestock_cost,
                         S_lower,
                         S_upper,
@@ -829,7 +834,7 @@ def main():
                     )
 
                     optimal_basestock_cost = calculate_basestock_cost(
-                        optimal_S,
+                        optimal_S_basestock,
                         ddlt_table_sorted,
                         mu_DL,
                         Ch_annual,
@@ -842,7 +847,7 @@ def main():
                     with col1:
                         st.metric(
                             "📦 Optimal Basestock Level (S)",
-                            f"{optimal_S:,.0f}",
+                            f"{optimal_S_basestock:,.0f}",
                             help="Target inventory position"
                         )
                     with col2:
@@ -903,7 +908,7 @@ def main():
                     'System': ['(Q, R)', 'Basestock (T, S)', '(s, S)'],
                     'Parameters': [
                         f'Q={qr_results["optimal_Q"]:,.0f}, R={qr_results["optimal_R"]:,.0f}',
-                        f'S={optimal_S:,.0f}',
+                        f'S={optimal_S_basestock:,.0f}',
                         f's={optimal_s:,.0f}, S={optimal_S:,.0f}'
                     ],
                     'Total Annual Cost (฿)': [
