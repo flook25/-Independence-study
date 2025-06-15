@@ -179,20 +179,18 @@ def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
         Q_old = Q
         iteration += 1
 
-        # --- Step 2: Determine Optimal CSL* ---
+        # --- Step 2: Determine Optimal CSL ---
         if service_level_type == 'backlog':
-            csl_star = 1 - (Q * Ch_annual) / (D_annual * Cs_per_unit)
-        # --- THIS IS THE FIX: Changed 'lost_sale' to 'lost_sales' to match UI ---
+            csl_optimal = 1 - (Q * Ch_annual) / (D_annual * Cs_per_unit)
         elif service_level_type == 'lost_sales':
-            # This formula is the algebraic equivalent of the one in the image
-            csl_star = (D_annual * Cs_per_unit) / ((D_annual * Cs_per_unit) + (Q * Ch_annual))
+            csl_optimal = (D_annual * Cs_per_unit) / ((D_annual * Cs_per_unit) + (Q * Ch_annual))
         else:
             st.error(f"❌ Error: Invalid service_level_type received: '{service_level_type}'. Check code logic.")
             return None
-        csl_star = max(0, min(1, csl_star))
+        csl_optimal = max(0, min(1, csl_optimal))
 
         # --- Step 3: Find Reorder Point (R) ---
-        r_candidates = ddlt_table_sorted[ddlt_table_sorted['CSL'] >= csl_star]
+        r_candidates = ddlt_table_sorted[ddlt_table_sorted['CSL'] >= csl_optimal]
         if not r_candidates.empty:
             R = r_candidates.iloc[0]['R']
         else:
@@ -214,7 +212,7 @@ def find_optimal_qr(ddlt_with_shortage_table, daily_avg_demand, avg_lead_time,
         optimization_history.append({
             'Iteration': iteration,
             'Q_old': Q_old,
-            'CSL_star': csl_star,
+            'CSL_optimal': csl_optimal,
             'R_found': R,
             'E_S_at_R': es_at_R,
             'TAC': TAC
@@ -317,7 +315,6 @@ if uploaded_file is not None:
                 final_ddlt = st.session_state.processed_data['final_ddlt_with_shortage']
                 daily_avg_demand = st.session_state.processed_data['final_demand_df']['Total_Demand'].mean()
                 
-                # Map radio button to function argument
                 service_level_type = case_type.lower().replace(' ', '_')
 
                 with st.spinner(f"Finding Optimal Q and R for '{case_type}' case..."):
@@ -369,7 +366,7 @@ if uploaded_file is not None:
                         st.subheader("Iteration History Table")
                         st.dataframe(history_df.style.format({
                             'Q_old': '{:,.2f}',
-                            'CSL_star': '{:.4f}',
+                            'CSL_optimal': '{:.4f}',
                             'R_found': '{:,.0f}',
                             'E_S_at_R': '{:.4f}',
                             'TAC': '{:,.2f}'
