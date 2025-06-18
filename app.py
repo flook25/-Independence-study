@@ -710,34 +710,44 @@ def main():
                     st.dataframe(history_df.style.format({
                         'Q_old': '{:,.2f}',
                         'CSL_optimal': '{:.4f}',
-                        'R_found': '{:,.0f}',
+                        'R_found': '{:.0f}',
                         'E_S_at_R': '{:.4f}',
                         'TAC': '{:,.2f}'
                     }))
 
-                # Plot bar chart for Q, R, TAC
-                st.subheader("📊 (Q, R) Policy Results Visualization")
-                bar_data = pd.DataFrame({
-                    'Metric': ['Order Quantity (Q)', 'Reorder Point (R)', 'Total Annual Cost (TAC)'],
-                    'Value': [qr_results['optimal_Q'], qr_results['optimal_R'], qr_results['min_TAC']]
-                })
-                fig = px.bar(
-                    bar_data,
-                    x='Metric',
-                    y='Value',
-                    text='Value',
-                    color='Metric',
-                    color_discrete_sequence=['#2980b9', '#e67e22', '#27ae60'],
-                    title='(Q, R) Policy Key Results'
-                )
-                fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-                fig.update_layout(
-                    showlegend=False,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    yaxis_title=None
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                    # Visual Analysis of Cost Trade-Offs
+                    st.subheader("📈 Cost Component Trade-Offs During Optimization")
+                    fig_costs = go.Figure()
+                    fig_costs.add_trace(go.Scatter(
+                        x=history_df['Iteration'], y=history_df['Ordering_Cost'],
+                        mode='lines+markers', name='Ordering Cost',
+                        line=dict(color='red', width=2), marker=dict(size=7)
+                    ))
+                    fig_costs.add_trace(go.Scatter(
+                        x=history_df['Iteration'], y=history_df['Holding_Cost'],
+                        mode='lines+markers', name='Holding Cost',
+                        line=dict(color='gray', width=2), marker=dict(size=7)
+                    ))
+                    fig_costs.add_trace(go.Scatter(
+                        x=history_df['Iteration'], y=history_df['Shortage_Cost'],
+                        mode='lines+markers', name='Shortage/Lost Sale Cost',
+                        line=dict(color='gold', width=2), marker=dict(size=7)
+                    ))
+                    fig_costs.add_trace(go.Scatter(
+                        x=history_df['Iteration'], y=history_df['TAC'],
+                        mode='lines+markers', name='Total Annual Cost (TAC)',
+                        line=dict(color='#2980b9', width=3, dash='dash'), marker=dict(size=7)
+                    ))
+                    fig_costs.update_layout(
+                        title='Figure 4.1: Visualizing Cost Component Trade-Offs during Iterative Search',
+                        xaxis_title='Iteration',
+                        yaxis_title='Cost (฿)',
+                        plot_bgcolor='#222c36',
+                        paper_bgcolor='#222c36',
+                        font_color='white',
+                        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                    )
+                    st.plotly_chart(fig_costs, use_container_width=True)
 
 # Run the app
 if __name__ == "__main__":
