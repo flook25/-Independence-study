@@ -17,6 +17,7 @@ import io
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import math
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -259,7 +260,7 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     
     # Statistical Summary and Metrics
     st.subheader("📊 Descriptive Statistics")
-    st.dataframe(demand_data.describe(), use_container_width=True) # Ensure full dataframe display
+    st.dataframe(demand_data.describe(), use_container_width=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -273,25 +274,38 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     tab1, tab2 = st.tabs(["📊 Distribution", "📈 Time Series"])
     
     with tab1:
-        # Matplotlib Histogram (as requested)
+        # Modernized Histogram with dark background
         fig_hist, ax_hist = plt.subplots(figsize=(12, 7))
-        sns.histplot(demand_data, kde=True, bins=30, color='#2980b9', edgecolor='black', ax=ax_hist)
-        ax_hist.set_title(f'Distribution of Total Daily Demand {title_suffix}', fontsize=16, fontweight='bold')
-        ax_hist.set_xlabel('Total Daily Demand (Units)', fontsize=14)
-        ax_hist.set_ylabel('Frequency', fontsize=14)
-        ax_hist.grid(axis='y', alpha=0.75, linestyle='--')
+        fig_hist.patch.set_facecolor('#222c36')
+        ax_hist.set_facecolor('#222c36')
+        # Histogram
+        sns.histplot(
+            demand_data, kde=False, bins=30, color='#4fc3f7', edgecolor='#90caf9',
+            alpha=0.7, ax=ax_hist
+        )
+        # KDE
+        sns.kdeplot(
+            demand_data, color='#ffb300', linewidth=3, ax=ax_hist
+        )
+        # Titles and labels
+        ax_hist.set_title(f'Distribution of Total Daily Demand {title_suffix}', fontsize=18, fontweight='bold', color='white')
+        ax_hist.set_xlabel('Total Daily Demand (Units)', fontsize=15, color='white')
+        ax_hist.set_ylabel('Frequency', fontsize=15, color='white')
+        # Ticks and grid
+        ax_hist.tick_params(axis='x', colors='white')
+        ax_hist.tick_params(axis='y', colors='white')
+        ax_hist.grid(axis='y', alpha=0.3, linestyle='--', color='white')
+        for spine in ax_hist.spines.values():
+            spine.set_color('white')
         st.pyplot(fig_hist)
     
     with tab2:
         if 'Date' in daily_demand_df.columns:
-            # Sort by date
             df_sorted = daily_demand_df.sort_values('Date').copy()
-            # Rolling mean (7-day)
             if len(df_sorted) >= 7:
                 df_sorted['RollingMean'] = df_sorted['Total_Demand'].rolling(window=7, min_periods=1).mean()
             else:
                 df_sorted['RollingMean'] = df_sorted['Total_Demand']
-            # Plotly scatter for raw data, line for rolling mean
             fig_ts = go.Figure()
             fig_ts.add_trace(go.Scatter(
                 x=df_sorted['Date'],
@@ -313,11 +327,11 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
                 title='Demand Over Time',
                 xaxis_title='Date',
                 yaxis_title='Daily Demand (Units)',
-                plot_bgcolor='white',
-                paper_bgcolor='white',
-                font_color='black',
-                xaxis=dict(showgrid=True, gridcolor='lightgray', tickformat='%b %Y', tickangle=45),
-                yaxis=dict(showgrid=True, gridcolor='lightgray'),
+                plot_bgcolor='#222c36',
+                paper_bgcolor='#222c36',
+                font_color='white',
+                xaxis=dict(showgrid=True, gridcolor='gray', tickformat='%b %Y', tickangle=45, color='white'),
+                yaxis=dict(showgrid=True, gridcolor='gray', color='white'),
                 legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
             )
             st.plotly_chart(fig_ts, use_container_width=True)
@@ -669,10 +683,11 @@ def main():
                 # Key metrics in styled cards
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
+                    q_rounded = math.ceil(qr_results['optimal_Q'])
                     st.metric(
                         "📦 Order Quantity (Q)", 
-                        f"{qr_results['optimal_Q']:,.0f}",
-                        help="Optimal quantity to order each time"
+                        f"{q_rounded:,}",
+                        help="Optimal quantity to order each time (rounded up)"
                     )
                 with col2:
                     st.metric(
