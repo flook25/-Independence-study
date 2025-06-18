@@ -270,12 +270,12 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     # Interactive visualizations
     st.subheader("📈 Interactive Demand Analysis")
     
-    tab1, tab2 = st.tabs(["📊 Distribution", "📈 Time Series"]) # Removed Summary Table tab
+    tab1, tab2 = st.tabs(["📊 Distribution", "📈 Time Series"])
     
     with tab1:
         # Matplotlib Histogram (as requested)
         fig_hist, ax_hist = plt.subplots(figsize=(12, 7))
-        sns.histplot(demand_data, kde=True, bins=30, color='#2980b9', edgecolor='black', ax=ax_hist) # Using original app color
+        sns.histplot(demand_data, kde=True, bins=30, color='#2980b9', edgecolor='black', ax=ax_hist)
         ax_hist.set_title(f'Distribution of Total Daily Demand {title_suffix}', fontsize=16, fontweight='bold')
         ax_hist.set_xlabel('Total Daily Demand (Units)', fontsize=14)
         ax_hist.set_ylabel('Frequency', fontsize=14)
@@ -284,31 +284,42 @@ def analyze_and_visualize_distribution(daily_demand_df, title_suffix=""):
     
     with tab2:
         if 'Date' in daily_demand_df.columns:
-            # Plotly Time series plot (styled to match example)
-            fig_ts = px.line(
-                daily_demand_df, 
-                x='Date', 
-                y='Total_Demand',
-                title='Demand Over Time',
-                labels={'Total_Demand': 'Daily Demand (Units)'},
-                line_shape='linear' # Ensure sharp lines as in picture
-            )
-            fig_ts.update_traces(mode='lines+markers', marker_symbol='circle', marker_size=7, line_color='blue') # Blue line with circle markers
+            # Sort by date
+            df_sorted = daily_demand_df.sort_values('Date').copy()
+            # Rolling mean (7-day)
+            if len(df_sorted) >= 7:
+                df_sorted['RollingMean'] = df_sorted['Total_Demand'].rolling(window=7, min_periods=1).mean()
+            else:
+                df_sorted['RollingMean'] = df_sorted['Total_Demand']
+            # Plotly scatter for raw data, line for rolling mean
+            fig_ts = go.Figure()
+            fig_ts.add_trace(go.Scatter(
+                x=df_sorted['Date'],
+                y=df_sorted['Total_Demand'],
+                mode='markers',
+                marker=dict(color='rgba(41,128,185,0.5)', size=6),
+                name='Daily Demand',
+                hovertemplate='Date=%{x}<br>Daily Demand=%{y}'
+            ))
+            fig_ts.add_trace(go.Scatter(
+                x=df_sorted['Date'],
+                y=df_sorted['RollingMean'],
+                mode='lines',
+                line=dict(color='#e67e22', width=2),
+                name='7-Day Rolling Mean',
+                hovertemplate='Date=%{x}<br>7-Day Mean=%{y:.2f}'
+            ))
             fig_ts.update_layout(
-                plot_bgcolor='white', # White background
-                paper_bgcolor='white', # White paper background
-                font_color='black', # Black font
-                xaxis=dict(showgrid=True, gridcolor='lightgray'), # Light gray grid lines
+                title='Demand Over Time',
+                xaxis_title='Date',
+                yaxis_title='Daily Demand (Units)',
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                font_color='black',
+                xaxis=dict(showgrid=True, gridcolor='lightgray', tickformat='%b %Y', tickangle=45),
                 yaxis=dict(showgrid=True, gridcolor='lightgray'),
-                title_font_color='black',
-                hovermode="x unified" # Improve hover experience
+                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
             )
-            # Add a horizontal dashed line for Reorder Point if needed (conceptual for time series, not from data)
-            # You can add a conceptual dashed line like this if desired:
-            # fig_ts.add_shape(type='line', xref='paper', yref='y',
-            #                 x0=0, y0=500, x1=1, y1=500, # Example y-value for reorder point
-            #                 line=dict(color='orange', width=2, dash='dash'))
-            
             st.plotly_chart(fig_ts, use_container_width=True)
         else:
             st.info("Date column not available for time series analysis")
@@ -689,252 +700,27 @@ def main():
                         'TAC': '{:,.2f}'
                     }))
 
-                # Add Chapter 8 header and Step 8
-                st.markdown(f"""
-                <div class="main-header">
-                    <h2>Chapter 8: Optimal Basestock and (s, S) System Parameters ⚙️</h2>
-                    <p>This chapter introduces optimization algorithms for determining parameters for Basestock and (s, S) inventory systems.</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.header("🎯 Step 8: Basestock and (s, S) System Optimization")
-                create_progress_indicator(8, total_steps=8)
-
-                # Helper functions for optimization
-                def get_es_from_r(R_val, ddlt_table_sorted):
-                    """Helper function to get E_S for a given R from the sorted DDLT table."""
-                    if R_val in ddlt_table_sorted['R'].values:
-                        return ddlt_table_sorted.loc[ddlt_table_sorted['R'] == R_val, 'E_S'].iloc[0]
-                    else:
-                        idx_gte = ddlt_table_sorted[ddlt_table_sorted['R'] >= R_val].index
-                        if not idx_gte.empty:
-                            chosen_R_idx = idx_gte[0]
-                        else:
-                            chosen_R_idx = ddlt_table_sorted.index[-1]
-                        return ddlt_table_sorted.loc[chosen_R_idx, 'E_S']
-
-                def calculate_basestock_cost(S_candidate, ddlt_table_sorted, mu_DL, Ch_annual, Cs_per_unit, D_annual, Avg_Daily_Demand):
-                    """Calculates the Total Annual Cost for a Basestock (S) system."""
-                    S_candidate = max(0, S_candidate)
-                    es_at_S = get_es_from_r(S_candidate, ddlt_table_sorted)
-                    holding_cost = (S_candidate - mu_DL + es_at_S) * Ch_annual
-                    shortage_cost = Cs_per_unit * es_at_S * (D_annual / Avg_Daily_Demand)
-                    return holding_cost + shortage_cost
-
-                def calculate_s_S_cost(s_candidate, S_candidate, ddlt_table_sorted, D_annual, mu_DL, Cp, Ch_annual, Cs_per_unit):
-                    """Calculates the Total Annual Cost for an (s, S) system."""
-                    s_candidate = max(0, s_candidate)
-                    S_candidate = max(s_candidate, S_candidate)
-                    Q_val = S_candidate - s_candidate
-                    if Q_val <= 0:
-                        return float('inf')
-                    es_at_s = get_es_from_r(s_candidate, ddlt_table_sorted)
-                    ordering_cost = (D_annual / Q_val) * Cp
-                    holding_cost = (Q_val / 2 + s_candidate - mu_DL + es_at_s) * Ch_annual
-                    shortage_cost = Cs_per_unit * es_at_s * (D_annual / Q_val)
-                    return ordering_cost + holding_cost + shortage_cost
-
-                def grid_search(cost_func, lower_bound, upper_bound, step_size, *cost_args):
-                    """Performs Grid Search to find the minimum of a function."""
-                    best_x = None
-                    min_cost = float('inf')
-                    search_range = np.arange(lower_bound, upper_bound + step_size, step_size)
-                    for x_val in search_range:
-                        x_discrete = round(x_val)
-                        current_cost = cost_func(x_discrete, *cost_args)
-                        if current_cost < min_cost:
-                            min_cost = current_cost
-                            best_x = x_discrete
-                    return best_x
-
-                def golden_section_search(cost_func, a_initial, b_initial, tol, *cost_args):
-                    """Performs Golden Section Search to find the minimum of a unimodal function."""
-                    phi = (np.sqrt(5) - 1) / 2
-                    a_k, b_k = a_initial, b_initial
-                    l_k = b_k - phi * (b_k - a_k)
-                    u_k = a_k + phi * (b_k - a_k)
-                    tc_lk = cost_func(l_k, *cost_args)
-                    tc_uk = cost_func(u_k, *cost_args)
-
-                    while abs(b_k - a_k) > tol:
-                        if tc_lk > tc_uk:
-                            a_k, l_k = l_k, u_k
-                            tc_lk = tc_uk
-                            u_k = a_k + phi * (b_k - a_k)
-                            tc_uk = cost_func(u_k, *cost_args)
-                        else:
-                            b_k, u_k = u_k, l_k
-                            tc_uk = tc_lk
-                            l_k = b_k - phi * (b_k - a_k)
-                            tc_lk = cost_func(l_k, *cost_args)
-                    return (a_k + b_k) / 2
-
-                def cyclic_coordinate_search(cost_func, initial_s, initial_S, bounds_s, bounds_S, tol, max_iter, *cost_args):
-                    """Performs Cyclic Coordinate Search to find the minimum of a two-variable function."""
-                    s, S = initial_s, max(initial_S, initial_s + 1)
-                    current_cost = cost_func(s, S, *cost_args)
-
-                    for iteration in range(max_iter):
-                        s_old, S_old = s, S
-
-                        # Fix s, search for S
-                        def S_cost_func(S_val, s_fixed, *args):
-                            return cost_func(s_fixed, S_val, *args)
-                        S_lower_bound = max(bounds_S[0], s)
-                        S = round(golden_section_search(S_cost_func, S_lower_bound, bounds_S[1], tol, s, *cost_args))
-                        S = max(s, min(bounds_S[1], S))
-
-                        # Fix S, search for s
-                        def s_cost_func(s_val, S_fixed, *args):
-                            return cost_func(s_val, S_fixed, *args)
-                        s_upper_bound = min(bounds_s[1], S)
-                        s = round(golden_section_search(s_cost_func, bounds_s[0], s_upper_bound, tol, S, *cost_args))
-                        s = max(bounds_s[0], min(S, s))
-
-                        new_cost = cost_func(s, S, *cost_args)
-                        if abs(s - s_old) < tol and abs(S - S_old) < tol:
-                            break
-                        current_cost = new_cost
-
-                    return s, S, current_cost
-
-                # Calculate parameters for optimization
-                daily_avg_demand = st.session_state.processed_data['final_demand_df']['Total_Demand'].mean()
-                D_annual = daily_avg_demand * 365
-                mu_DL = daily_avg_demand * lead_time_days
-                Ch_annual = product_cost * (h_percent / 100.0)
-                Cs_per_unit = product_cost * (s_percent / 100.0)
-
-                # Display average daily demand
-                st.info(f"📊 Average Daily Demand used for calculations: **{daily_avg_demand:,.2f}** units/day")
-
-                # Optimize Basestock (T, S) system
-                st.subheader("📊 Basestock (T, S) System Optimization")
-                with st.spinner("Optimizing Basestock level..."):
-                    ddlt_table_sorted = final_ddlt.sort_values(by='R').reset_index(drop=True)
-                    min_R = ddlt_table_sorted['R'].min()
-                    max_R = ddlt_table_sorted['R'].max()
-                    
-                    S_lower = max(0, int(mu_DL - 2 * daily_avg_demand))
-                    S_upper = int(mu_DL + 5 * daily_avg_demand)
-                    S_lower = min(S_lower, int(min_R - 50))
-                    S_upper = max(S_upper, int(max_R + 50))
-
-                    optimal_S_basestock = grid_search(
-                        calculate_basestock_cost,
-                        S_lower,
-                        S_upper,
-                        1,
-                        ddlt_table_sorted,
-                        mu_DL,
-                        Ch_annual,
-                        Cs_per_unit,
-                        D_annual,
-                        daily_avg_demand
-                    )
-
-                    optimal_basestock_cost = calculate_basestock_cost(
-                        optimal_S_basestock,
-                        ddlt_table_sorted,
-                        mu_DL,
-                        Ch_annual,
-                        Cs_per_unit,
-                        D_annual,
-                        daily_avg_demand
-                    )
-
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(
-                            "📦 Optimal Basestock Level (S)",
-                            f"{optimal_S_basestock:,.0f}",
-                            help="Target inventory position"
-                        )
-                    with col2:
-                        st.markdown(f"""<div style='font-size:1.2rem; font-weight:bold; color:#E67E22;'>💰 Total Annual Cost</div><div style='font-size:1.7rem; font-weight:bold;'>{optimal_basestock_cost:,.2f} ฿</div>""", unsafe_allow_html=True)
-
-                # Optimize (s, S) system
-                st.subheader("📈 (s, S) System Optimization")
-                with st.spinner("Optimizing (s, S) parameters..."):
-                    initial_s = ddlt_table_sorted['R'].median()
-                    initial_S = initial_s + daily_avg_demand * 5
-                    
-                    s_bounds = (0, int(max_R + 100))
-                    S_bounds = (0, int(max_R + daily_avg_demand * 5 * lead_time_days))
-
-                    optimal_s, optimal_S, min_s_S_cost = cyclic_coordinate_search(
-                        calculate_s_S_cost,
-                        initial_s,
-                        initial_S,
-                        s_bounds,
-                        S_bounds,
-                        0.5,
-                        50,
-                        ddlt_table_sorted,
-                        D_annual,
-                        mu_DL,
-                        cp_cost,
-                        Ch_annual,
-                        Cs_per_unit
-                    )
-
-                    optimal_Q_ss = optimal_S - optimal_s
-
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric(
-                            "🔄 Reorder Point (s)",
-                            f"{optimal_s:,.0f}",
-                            help="Inventory level to trigger reorder"
-                        )
-                    with col2:
-                        st.metric(
-                            "📦 Order-Up-To Level (S)",
-                            f"{optimal_S:,.0f}",
-                            help="Target inventory level after reorder"
-                        )
-                    with col3:
-                        st.metric(
-                            "💰 Total Annual Cost",
-                            f"{min_s_S_cost:,.2f} ฿",
-                            help="Minimum total annual cost for (s, S) system"
-                        )
-
-                    st.info(f"📊 Optimal Order Quantity (Q = S - s): {optimal_Q_ss:,.0f} units")
-
-                # Comparison of all three systems
-                st.subheader("📊 System Comparison")
-                comparison_data = {
-                    'System': ['(Q, R)', 'Basestock (T, S)', '(s, S)'],
-                    'Parameters': [
-                        f'Q={qr_results["optimal_Q"]:,.0f}, R={qr_results["optimal_R"]:,.0f}',
-                        f'S={optimal_S_basestock:,.0f}',
-                        f's={optimal_s:,.0f}, S={optimal_S:,.0f}'
-                    ],
-                    'Total Annual Cost (฿)': [
-                        qr_results['min_TAC'],
-                        optimal_basestock_cost,
-                        min_s_S_cost
-                    ]
-                }
-                comparison_df = pd.DataFrame(comparison_data)
-                st.dataframe(comparison_df.style.format({
-                    'Total Annual Cost (฿)': '{:,.2f}'
-                }), use_container_width=True)
-
-                # Visualize cost comparison
+                # Plot bar chart for Q, R, TAC
+                st.subheader("📊 (Q, R) Policy Results Visualization")
+                bar_data = pd.DataFrame({
+                    'Metric': ['Order Quantity (Q)', 'Reorder Point (R)', 'Total Annual Cost (TAC)'],
+                    'Value': [qr_results['optimal_Q'], qr_results['optimal_R'], qr_results['min_TAC']]
+                })
                 fig = px.bar(
-                    comparison_df,
-                    x='System',
-                    y='Total Annual Cost (฿)',
-                    title='Comparison of Total Annual Costs',
-                    color='System',
-                    text_auto='.2s'
+                    bar_data,
+                    x='Metric',
+                    y='Value',
+                    text='Value',
+                    color='Metric',
+                    color_discrete_sequence=['#2980b9', '#e67e22', '#27ae60'],
+                    title='(Q, R) Policy Key Results'
                 )
+                fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
                 fig.update_layout(
                     showlegend=False,
                     plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)'
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    yaxis_title=None
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
