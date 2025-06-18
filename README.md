@@ -104,7 +104,7 @@ You can explore the simulation logic and interact with the model directly via th
 ## 👨‍🏫 Advisor
 
 <div align="center">
-  <img src="https://lh4.googleusercontent.com/G30oFZqfkJAtqUFdqu-3V1SrskHaLGCFRjX917IGZVohhNN-0F2ST1t63NTEkhDoAPpKBhBh3vgmrcqYd1RRer1YjZT6Fq2NUl31kp9c8LTfJtkd-c8XthUvaODkbRakbDUGyajLcfO4ptuxl5MTGawcNEtuolC8cs_P-sW-2z-vm86xqMGBaQ=w1280" alt="Dr. Jirachai Buddhakulsomsiri" width="160" style="border-radius: 50%;"/>
+  <img src="https://github.com/flook25/-Independence-study/blob/main/Aj_ji.jpg" alt="Dr. Jirachai Buddhakulsomsiri" width="160" style="border-radius: 50%;"/>
   <br>
   <b>Dr. Jirachai Buddhakulsomsiri</b>
   <p>Associate Professor<br>Sirindhorn International Institute of Technology (SIIT)</p>
