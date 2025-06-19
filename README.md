@@ -55,15 +55,15 @@ We simulate a **base-stock inventory policy** under a **lost sales environment**
 
 ## 🧮 Cost Model
 
-The total inventory cost is modeled as the sum of three components:
+The total inventory cost is modeled as the sum of ordering, holding, and shortage costs. For the **Lost Sales Case**, the Total Annual Cost (TAC) is calculated as:
 
 $$
-\text{Total Cost} = \text{Ordering Cost} + \text{Holding Cost} + \text{Shortage Cost}
+\text{TAC} = \left(\frac{D}{Q}\right) \cdot C_p + \left(\frac{Q}{2} + R - \mu_{DL} + E(S)\right) \cdot C_h + \left(\frac{D}{Q}\right) \cdot C_s \cdot E(S)
 $$
 
-- **Ordering Cost:** A fixed cost incurred per ordering cycle.
-- **Holding Cost:** The cost of carrying inventory, calculated as $CH \cdot \frac{S}{2}$.
-- **Shortage Cost:** The cost of lost sales, calculated as $CS \cdot E(S)$.
+- **Ordering Cost:** The cost associated with placing orders throughout the year.
+- **Holding Cost:** The cost of carrying both cycle stock and safety stock.
+- **Shortage Cost:** The penalty or lost profit from unfulfilled demand (lost sales).
 
 ---
 
@@ -95,9 +95,9 @@ You can explore the simulation logic and interact with the model directly via th
 
 ## 📁 Deliverables
 
-| Final Report | Simulation Workbook | Presentation Slides |
-| :----------: | :-------------------: | :-------------------: |
-| **[View on Google Docs](https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing)**<br><br><a href="https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-docs--v1.png" width="64" alt="Google Docs Icon"/></a> | **[View on Google Sheets](https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing)**<br><br><a href="https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-sheets.png" width="64" alt="Google Sheets Icon"/></a> | **[View on Google Slides](https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing)**<br><br><a href="https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-slides.png" width="64" alt="Google Slides Icon"/></a> |
+| Final Report | Simulation Workbook | Presentation Slides | Live Demo |
+| :----------: | :-------------------: | :-------------------: | :-------------------: |
+| **[View on Google Docs](https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing)**<br><br><a href="https://docs.google.com/document/d/1Iq0yay1xUAMxYXiJTPcNNm_MyfQfmtbnR2q3RRzasLI/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-docs--v1.png" width="64" alt="Google Docs Icon"/></a> | **[View on Google Sheets](https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing)**<br><br><a href="https://docs.google.com/spreadsheets/d/1xkvY5pgZ9h3RBFdfx8_XHcTr8V5JO7TQA7KUig3dHlQ/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-sheets.png" width="64" alt="Google Sheets Icon"/></a> | **[View on Google Slides](https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing)**<br><br><a href="https://docs.google.com/presentation/d/1Y0cwvvE2SQW9rWCOFuLykTLfr5jwZksDlXM--qWKv28/edit?usp=sharing"><img src="https://img.icons8.com/color/96/google-slides.png" width="64" alt="Google Slides Icon"/></a> | **[Try the App](https://q39lp62yktkbytkghvnp9b.streamlit.app/)**<br><br><a href="https://q39lp62yktkbytkghvnp9b.streamlit.app/"><img src="https://img.icons8.com/color/96/rocket.png" width="64" alt="Streamlit App Icon"/></a> |
 
 ---
 
