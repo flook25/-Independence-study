@@ -6,7 +6,7 @@
 
 <div align="center">
   <a href="https://www.siit.tu.ac.th/">
-    <img src="https://admissions.siit.tu.ac.th/wp-content/uploads/2023/06/cropped-TU-SIIT1992-01.png" alt="SIIT Logo" width="400"/>
+    <img src="Logo-SIIT.png" alt="SIIT Logo" width="400"/>
   </a>
   <h3>Master’s Independent Study — LSCSE</h3>
   <p><b>Sirindhorn International Institute of Technology (SIIT), Thammasat University</b></p>
